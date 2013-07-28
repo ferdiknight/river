@@ -1,0 +1,288 @@
+package net.river.socket.pool;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketException;
+import java.nio.channels.SocketChannel;
+
+/**
+ * �����ӳ��е�Socket
+ * @author zig
+ *
+ */
+public class PooledSocket extends Socket {
+
+    private Socket socket;
+
+    private long lastReleaseTime;
+
+    private SocketPool pool;
+
+    private String owner;
+
+    private boolean healthy;
+
+    private boolean closed;
+    
+    private InputStreamReader cachedReader;
+    private String cachedReaderCharset;
+    
+    private OutputStreamWriter cachedWriter;
+    private String cachedWriterCharset;
+
+    /**
+     * ���캯��
+     * @param pool ����socket���ӳض��������
+     * @param socket
+     */
+    PooledSocket(SocketPool pool, Socket socket) {
+        this.pool = pool;
+        this.socket = socket;
+        healthy = true;
+    }
+
+    void setLastReleaseTime(long t) {
+        lastReleaseTime = t;
+    }
+
+    long getLastReleaseTime() {
+        return lastReleaseTime;
+    }
+
+    SocketPool getPool() {
+        return pool;
+    }
+
+    void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    String getOwner() {
+        return owner;
+    }
+
+    public void setHealthy(boolean value) {
+        healthy = value;
+    }
+
+    boolean isHealthy() {
+        return healthy;
+    }
+
+    public void setClosed(boolean closed) {
+        this.closed = closed;
+    }
+
+    Socket getSocket() {
+        return socket;
+    }
+    
+    public InputStreamReader getInputStreamReader(String charset) throws IOException {
+    	if (cachedReader != null && cachedReaderCharset != null && cachedReaderCharset.equalsIgnoreCase(charset)) {
+    		return cachedReader;
+    	}
+    	cachedReader = new InputStreamReader(getInputStream(), charset);
+    	cachedReaderCharset = charset;
+    	return cachedReader;
+    }
+    
+    public InputStream getInputStream() throws IOException {
+        try {
+            return new PooledSocketInputStream(this, socket.getInputStream());
+        } catch (IOException e) {
+		System.err.println("Exception : getInputStream : " + e);
+            healthy = false;
+            throw e;
+        }
+    }
+
+    public OutputStreamWriter getOutputStreamWriter(String charset) throws IOException {
+    	if (cachedWriter != null && cachedWriterCharset != null && cachedWriterCharset.equalsIgnoreCase(charset)) {
+    		return cachedWriter;
+    	}
+    	cachedWriter = new OutputStreamWriter(getOutputStream(), charset);
+    	cachedWriterCharset = charset;
+    	return cachedWriter;
+    }
+    
+    public OutputStream getOutputStream() throws IOException {
+        try {
+            return new PooledSocketOutputStream(this, socket.getOutputStream());
+        } catch (IOException e) {
+		System.err.println("Exception : getOutputStream : " + e);
+            healthy = false;
+            throw e;
+        }
+    }
+
+    public void close() throws IOException {
+        if (closed) return;
+        closed = true;
+
+        if (healthy) {
+            pool.release(this);
+        } else {
+            pool.remove(this);
+        }
+    }
+
+    public void bind(SocketAddress bindpoint) throws IOException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void connect(SocketAddress endpoint) throws IOException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void connect(SocketAddress endpoint, int timeout) throws IOException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public SocketChannel getChannel() {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public InetAddress getInetAddress() {
+        return socket.getInetAddress();
+    }
+
+    public boolean getKeepAlive() throws SocketException {
+        return socket.getKeepAlive();
+    }
+
+    public InetAddress getLocalAddress() {
+        return socket.getLocalAddress();
+    }
+
+    public int getLocalPort() {
+        return socket.getLocalPort();
+    }
+
+    public SocketAddress getLocalSocketAddress() {
+        return socket.getLocalSocketAddress();
+    }
+
+    public boolean getOOBInline() throws SocketException {
+        return socket.getOOBInline();
+    }
+
+    public int getPort() {
+        return socket.getPort();
+    }
+
+    public int getReceiveBufferSize() throws SocketException {
+        return socket.getReceiveBufferSize();
+    }
+
+    public SocketAddress getRemoteSocketAddress() {
+        return socket.getRemoteSocketAddress();
+    }
+
+    public boolean getReuseAddress() throws SocketException {
+        return socket.getReuseAddress();
+    }
+
+    public int getSendBufferSize() throws SocketException {
+        return socket.getSendBufferSize();
+    }
+
+    public int getSoLinger() throws SocketException {
+        return socket.getSoLinger();
+    }
+
+    public int getSoTimeout() throws SocketException {
+        return socket.getSoTimeout();
+    }
+
+    public boolean getTcpNoDelay() throws SocketException {
+        return socket.getTcpNoDelay();
+    }
+
+    public int getTrafficClass() throws SocketException {
+        return socket.getTrafficClass();
+    }
+
+    public boolean isBound() {
+        return socket.isBound();
+    }
+
+    public boolean isClosed() {
+        return closed;
+    }
+
+    public boolean isConnected() {
+        return socket.isConnected();
+    }
+
+    public boolean isInputShutdown() {
+        return socket.isInputShutdown();
+    }
+
+    public boolean isOutputShutdown() {
+        return socket.isOutputShutdown();
+    }
+
+    public void sendUrgentData(int data) throws IOException {
+        try {
+            socket.sendUrgentData(data);
+        } catch (IOException e) {
+            healthy = false;
+            throw e;
+        }
+    }
+
+    public void setKeepAlive(boolean on) throws SocketException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void setOOBInline(boolean on) throws SocketException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void setPerformancePreferences(int connectionTime, int latency,
+            int bandwidth) {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void setReceiveBufferSize(int size) throws SocketException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void setReuseAddress(boolean on) throws SocketException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void setSendBufferSize(int size) throws SocketException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void setSoLinger(boolean on, int linger) throws SocketException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void setSoTimeout(int timeout) throws SocketException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void setTcpNoDelay(boolean on) throws SocketException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void setTrafficClass(int tc) throws SocketException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void shutdownInput() throws IOException {
+        throw new AbstractMethodError("not supported");
+    }
+
+    public void shutdownOutput() throws IOException {
+        throw new AbstractMethodError("not supported");
+    }
+}
