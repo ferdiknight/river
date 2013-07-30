@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * Socket ���ӳ�.
@@ -17,7 +15,7 @@ import org.apache.commons.logging.LogFactory;
  * @author zig
  */
 public class SocketPool {
-    private Log log = LogFactory.getLog(SocketPool.class);
+//    private Log log = LogFactory.getLog(SocketPool.class);
 
     private SocketFactory socketFactory = null;
 
@@ -75,13 +73,13 @@ public class SocketPool {
                 for (Iterator it = freeSockets.iterator(); it.hasNext();) {
                     PooledSocket psock = (PooledSocket) it.next();
                     if (current - psock.getLastReleaseTime() > maxIdle) {
-                        log.info("Remove idle socket [local_port:"
-                                + psock.getLocalPort() + "]");
+//                        log.info("Remove idle socket [local_port:"
+//                                + psock.getLocalPort() + "]");
                         it.remove();
                         try {
                             remove(psock);
                         } catch (IOException e) {
-                            log.info(e.getMessage());
+//                            log.info(e.getMessage());
                         }
                     }
                 }
@@ -91,8 +89,8 @@ public class SocketPool {
                 sock = (PooledSocket) freeSockets.removeFirst();
                 if (sock.getSocket().isClosed()) {
                     // �����Ѿ����������ر�
-                    log.info("PooledSocket [local_port:" + sock.getLocalPort()
-                            + "] closed by server.");
+//                    log.info("PooledSocket [local_port:" + sock.getLocalPort()
+//                            + "] closed by server.");
                     sock = null;
                 } else {
                     break;
@@ -117,8 +115,8 @@ public class SocketPool {
                     sock = new PooledSocket(this, rawSock);
                     socketCount++;
                     socketCreateCount++;
-                    log.info("New connection created [" + socketCount + ", "
-                            + socketCreateCount + "]:" + rawSock);
+//                    log.info("New connection created [" + socketCount + ", "
+//                            + socketCreateCount + "]:" + rawSock);
                     break;
                 }
             } else {
@@ -218,9 +216,9 @@ public class SocketPool {
 
             socketCount--;
             socketClosedCount++;
-            log.info("Socket [local_port:" + sock.getLocalPort() + ", "
-                    + socketCount + ", " + socketClosedCount
-                    + "] connection closed : " + sock.getSocket());
+//            log.info("Socket [local_port:" + sock.getLocalPort() + ", "
+//                    + socketCount + ", " + socketClosedCount
+//                    + "] connection closed : " + sock.getSocket());
             sock.getSocket().close();
         } finally {
             if (block)
