@@ -1,13 +1,15 @@
 package net.river.socket.pool;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBObject;
+import com.mongodb.Mongo;
+import java.io.*;
 import java.net.Socket;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.bson.types.ObjectId;
 
 /**
  * @author zig
@@ -18,31 +20,39 @@ public class Test implements Runnable
 
     private static SocketPool pool;
     private static String command;
+    
+    private static DB db;
+    
+    private static long sleep;
 
     public static void main(String[] args) throws Exception
     {
 
-        if (args.length < 3)
+        if (args.length < 6)
         {
             return;
         }
 
         command = args[2];
 
+        db = new Mongo(args[3]).getDB(args[4]);
+        
+        sleep = Long.parseLong(args[5]);
+        
         SocketFactoryImpl factory = new SocketFactoryImpl(args[0], Integer.parseInt(args[1]));
-        factory.setSoTimeout(10000);
+        factory.setSoTimeout(30000);
 
         pool = new SocketPool();
         pool.setSocketFactory(factory);
         pool.setMaxSocketCount(50);
         pool.setPoolSize(10);
-        pool.setMaxIdle(30000);
+        pool.setMaxIdle(120000);
 
-        for(int i=0;i<10;i++)
+        for (int i = 0; i < 10; i++)
         {
             new Thread(new Test()).start();
         }
-        
+
 //        while (true)
 //        {
 //            Socket socket = pool.getSocket();
@@ -55,7 +65,8 @@ public class Test implements Runnable
 //                writer.println(command);
 //                byte[] b = new byte[1024];
 //                is.read(b);
-//                System.out.println(new Date() + " : " + new String(b));
+//                String resp = new String(b);
+//                System.out.println(new Date() + " : " + resp);
 //
 //            }
 //            finally
@@ -68,21 +79,60 @@ public class Test implements Runnable
 
     public void run()
     {
+        DBObject object;
         while (true)
         {
             try
             {
                 Socket socket = pool.getSocket();
-                System.out.println(socket.getLocalPort());
+                //System.out.println(socket.getLocalPort());
                 try
                 {
-                    InputStream is = socket.getInputStream();
-                    PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+//                    PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+//                    pw.println(command);
+//                    pw.flush();
+                    OutputStream os = socket.getOutputStream();
+                    OutputStreamWriter osw = new OutputStreamWriter(os);
+                    osw.write(command + "\n");
+                    osw.flush();
 
-                    writer.println(command);
-                    byte[] b = new byte[1024];
+                    InputStream is = socket.getInputStream();
+
+                    byte[] b = new byte[512];
+
                     is.read(b);
-                    System.out.println(new Date() + " : " + new String(b));
+
+                    String resp = new String(b).trim();
+
+//                    InputStream is = socket.getInputStream();
+//                    InputStreamReader isr = new InputStreamReader(is);
+//                    StringBuilder response = new StringBuilder();
+//                    int c = -1;
+//                    while ((c = isr.read()) >= 0)
+//                    {
+//                        System.out.println(c);
+//                        response.append((char) c);
+//                    }
+
+//                    String resp = response.toString();
+
+
+                    //System.out.println(new Date() + " : " + resp);
+                    try
+                    {
+                        Thread.sleep(sleep);
+                    }
+                    catch(Exception ex)
+                    {
+                        
+                    }
+                    
+                    object = db.getCollection("crawl_product").findOne(new BasicDBObject("_id",new ObjectId(resp)));
+                    if(object == null)
+                    {
+                       System.out.println(resp);
+                    }
+
 
                 }
                 finally
