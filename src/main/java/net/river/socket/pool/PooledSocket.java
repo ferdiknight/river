@@ -12,7 +12,6 @@ import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 
 /**
- * �����ӳ��е�Socket
  * @author zig
  *
  */
@@ -132,22 +131,6 @@ public class PooledSocket extends Socket {
         }
     }
 
-    public void bind(SocketAddress bindpoint) throws IOException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void connect(SocketAddress endpoint) throws IOException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void connect(SocketAddress endpoint, int timeout) throws IOException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public SocketChannel getChannel() {
-        throw new AbstractMethodError("not supported");
-    }
-
     public InetAddress getInetAddress() {
         return socket.getInetAddress();
     }
@@ -237,52 +220,4 @@ public class PooledSocket extends Socket {
         }
     }
 
-    public void setKeepAlive(boolean on) throws SocketException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void setOOBInline(boolean on) throws SocketException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void setPerformancePreferences(int connectionTime, int latency,
-            int bandwidth) {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void setReceiveBufferSize(int size) throws SocketException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void setReuseAddress(boolean on) throws SocketException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void setSendBufferSize(int size) throws SocketException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void setSoLinger(boolean on, int linger) throws SocketException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void setSoTimeout(int timeout) throws SocketException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void setTcpNoDelay(boolean on) throws SocketException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void setTrafficClass(int tc) throws SocketException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void shutdownInput() throws IOException {
-        throw new AbstractMethodError("not supported");
-    }
-
-    public void shutdownOutput() throws IOException {
-        throw new AbstractMethodError("not supported");
-    }
 }

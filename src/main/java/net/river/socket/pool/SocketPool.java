@@ -12,9 +12,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Socket ���ӳ�.
+ * Socket Pool
  * 
- * @author zig
+ * @author ferdi
  */
 public class SocketPool {
     private Log log = LogFactory.getLog(SocketPool.class);
@@ -59,17 +59,16 @@ public class SocketPool {
     }
 
     /**
-     * �����ӳ���ȡ��һ���µ�����. �����ӳ�������block״̬��ʱ�����������û�п��ÿ������ӵ�ʱ�� ����ȴ�״̬��ֱ�����ӿ���;
-     * ���������non-block��״̬����û�� �������ӵ�ʱ�򣬻��׳�PoolFullException.
-     * 
-     * @return ���õ�����
-     * @throws IOException
+     * get a Socket Object from socket pool,if the pool is full and no free socket object can be returned,
+     * this method will throws a PoolFullException
+     * @return PooledSocket Object
+     * @throws IOException,PoolFullException
      */
     public synchronized Socket getSocket() throws PoolFullException,
             IOException {
         PooledSocket sock = null;
         while (true) {
-            // ���ȼ���Ƿ��г�ʱ�䲻ʹ�õ����ӣ�ɾ��֮
+            //remove and destory the idle socket
             if (maxIdle > 0) {
                 long current = System.currentTimeMillis();
                 for (Iterator it = freeSockets.iterator(); it.hasNext();) {
@@ -90,7 +89,7 @@ public class SocketPool {
             while (!freeSockets.isEmpty()) {
                 sock = (PooledSocket) freeSockets.removeFirst();
                 if (sock.getSocket().isClosed()) {
-                    // �����Ѿ����������ر�
+                    //check the socket is active or not
                     log.info("PooledSocket [local_port:" + sock.getLocalPort()
                             + "] closed by server.");
                     sock = null;
@@ -101,7 +100,7 @@ public class SocketPool {
 
             if (sock == null) {
                 if (maxSocketCount > 0 && socketCount >= maxSocketCount) {
-                    // socket���ӳ�����
+                    //check the pool reached the top
                     if (!block) {
                         throw new PoolFullException(maxSocketCount
                                 + " limit reached");
@@ -110,7 +109,7 @@ public class SocketPool {
                         wait();
                     } catch (InterruptedException e) {}
                 } else {
-                    // �����µ�����
+                    //create a new socket
                     if (socketFactory == null)
                         throw new NullPointerException("socketFactory is null");
                     Socket rawSock = socketFactory.createSocket();
@@ -125,6 +124,12 @@ public class SocketPool {
                 break;
             }
         }
+        
+        if(sock == null)
+        {
+            throw new RuntimeException("unknow system exception!");
+        }
+        
         sock.setOwner(Thread.currentThread().getName());
         sock.setClosed(false);
         usedSockets.add(sock);
